@@ -35,11 +35,8 @@ import matplotlib.pyplot as plt
 #tf.compat.v1.disable_eager_execution() # speeds up execution in Tensorflow v2
 
 # define the DNN-HA models to be evaluated 
-def run_dnn_test(wavfile_input):
+def run_dnn_test(wavfile_input, modeldirs):
   parentdir = ''
-  modeldirs = [
-  'CNN-HA-12layers',
-  ]
 
   # Define the inputs
   audiogram_input = [30,30,30,30,31.6,32.58,33.28,34.28,35] # the audiogram (in dB HL) across the 8 frequencies
@@ -111,15 +108,18 @@ def run_dnn_test(wavfile_input):
   stim_all = np.zeros((stim.shape[1], len(modeldirs)+1))
   stim_all[:,0] = stim[0,:,0]
 
+  # Find file name
+  wav_file_name = wavfile_input.split("/")[-1]
+
   if save_wav:
       if not os.path.exists(save_wav):
           os.makedirs(save_wav)
-      sio_wav.write(save_wav + '/' + wavfile_input[:-4] + '_20k.wav',int(fs_model),stim[0,:,0]*10**(-(wav_dBref+20*np.log10(p0))/20))
+      sio_wav.write(save_wav + '/' + wav_file_name[:-4] + '_20k.wav',int(fs_model),stim[0,:,0]*10**(-(wav_dBref+20*np.log10(p0))/20))
 
   # load the compensation models
   stimp = np.zeros((len(modeldirs),stim.shape[0],stim.shape[1],stim.shape[2]))
   for modeli, modeldir in enumerate(modeldirs):
-      dirtitle = modeldir
+      dirtitle = modeldir.split("/")[-1]
       
       weights_name = "/Gmodel.h5"
       print ("loading model from " + modeldir)
@@ -157,7 +157,7 @@ def run_dnn_test(wavfile_input):
       print(dirtitle + ": %.2f dB SPL" % (20*np.log10(rms(stimp[modeli,0],axis=None))-20*np.log10(p0)))
 
       if save_wav:
-          sio_wav.write(save_wav + '/' + wavfile_input[:-4] + '_' + dirtitle + '_20k.wav',int(fs_model),stimp[modeli,0,:,0]*10**(-(wav_dBref+20*np.log10(p0))/20))
+          sio_wav.write(save_wav + '/' + wav_file_name[:-4] + '_' + dirtitle + '_20k.wav',int(fs_model),stimp[modeli,0,:,0]*10**(-(wav_dBref+20*np.log10(p0))/20))
 
   # Plot the time-domain signal before and after processing
   plt.figure(1)
